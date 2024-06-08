@@ -195,7 +195,7 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: docker.paas.3311csci.com/dify-api:0.6.10
+    image: docker.paas.3311csci.com/csci/dify-api:0.6.10
     restart: always
     environment:
       CONSOLE_WEB_URL: ''
