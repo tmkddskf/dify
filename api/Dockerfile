@@ -1,5 +1,5 @@
 # base image
-FROM python:3.10-slim-bookworm AS base
+FROM python:3.10-bookworm AS base
 
 WORKDIR /app/api
 
@@ -15,13 +15,14 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV POETRY_VIRTUALENVS_CREATE=true
 
 FROM base AS packages
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc g++ libc-dev libffi-dev libgmp-dev libmpfr-dev libmpc-dev
+COPY debian.sources /etc/apt/sources.list.d/debian.sources
+RUN apt update --allow-unauthenticated --allow-insecure-repositories
+RUN apt install -y --allow-unauthenticated --no-install-recommends gcc g++ libc-dev libffi-dev libgmp-dev libmpfr-dev libmpc-dev
 
 # Install Python dependencies
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --sync --no-cache --no-root
+
 
 # production stage
 FROM base AS production
@@ -41,10 +42,13 @@ ENV TZ=UTC
 
 WORKDIR /app/api
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl wget vim nodejs ffmpeg libgmp-dev libmpfr-dev libmpc-dev \
-    && apt-get autoremove \
-    && rm -rf /var/lib/apt/lists/*
+COPY debian.sources /etc/apt/sources.list.d/debian.sources
+
+RUN apt clean
+RUN apt update --allow-unauthenticated --allow-insecure-repositories
+RUN apt install --allow-unauthenticated -y --no-install-recommends curl wget vim nodejs ffmpeg libgmp-dev libmpfr-dev libmpc-dev
+RUN apt autoremove 
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy Python environment and packages
 ENV VIRTUAL_ENV=/app/api/.venv

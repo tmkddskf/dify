@@ -2,7 +2,7 @@ version: '3'
 services:
   # API service
   api:
-    image: langgenius/dify-api:0.6.12-fix1
+    image: docker.paas.3311csci.com/csci/dify-api:0.6.12-fix1
     restart: always
     environment:
       # Startup mode, 'api' starts the API server.
