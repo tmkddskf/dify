@@ -12,7 +12,6 @@ x-shared-env: &shared-api-worker-env
   OPENAI_API_BASE: ${OPENAI_API_BASE:-}
   FILES_URL: ${FILES_URL:-}
   FILES_ACCESS_TIMEOUT: ${FILES_ACCESS_TIMEOUT:-300}
-  MIGRATION_ENABLED: ${MIGRATION_ENABLED:-true}
   DEPLOY_ENV: ${DEPLOY_ENV:-PRODUCTION}
   DIFY_BIND_ADDRESS: ${DIFY_BIND_ADDRESS:-0.0.0.0}
   DIFY_PORT: ${DIFY_PORT:-5001}
@@ -167,6 +166,7 @@ services:
       <<: *shared-api-worker-env
       # Startup mode, 'api' starts the API server.
       MODE: api
+      MIGRATION_ENABLED: ${MIGRATION_ENABLED:-true}
     depends_on:
       - db
       - redis
