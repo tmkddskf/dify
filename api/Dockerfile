@@ -5,19 +5,26 @@ WORKDIR /app/api
 
 # Install Poetry
 ENV POETRY_VERSION=1.8.3
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --upgrade poetry==${POETRY_VERSION}
+
+# if you located in China, you can use aliyun mirror to speed up
+# RUN pip install --no-cache-dir poetry==${POETRY_VERSION} -i https://mirrors.aliyun.com/pypi/simple/
+
+RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 
 # Configure Poetry
 ENV POETRY_CACHE_DIR=/tmp/poetry_cache
 ENV POETRY_NO_INTERACTION=1
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV POETRY_VIRTUALENVS_CREATE=true
+ENV POETRY_REQUESTS_TIMEOUT=15
 
 FROM base AS packages
-COPY debian.sources /etc/apt/sources.list.d/debian.sources
-RUN apt update --allow-unauthenticated --allow-insecure-repositories
-RUN apt install -y --allow-unauthenticated --no-install-recommends gcc g++ libc-dev libffi-dev libgmp-dev libmpfr-dev libmpc-dev
+
+# if you located in China, you can use aliyun mirror to speed up
+RUN sed -i 's@deb.debian.org@mirrors.aliyun.com@g' /etc/apt/sources.list.d/debian.sources
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc g++ libc-dev libffi-dev libgmp-dev libmpfr-dev libmpc-dev
 
 # Install Python dependencies
 COPY pyproject.toml poetry.lock ./
@@ -42,18 +49,19 @@ ENV TZ=UTC
 
 WORKDIR /app/api
 
-COPY debian.sources /etc/apt/sources.list.d/debian.sources
-
-RUN apt clean
-RUN apt update --allow-unauthenticated --allow-insecure-repositories
-RUN apt install --allow-unauthenticated -y --no-install-recommends curl wget vim nodejs ffmpeg libgmp-dev libmpfr-dev libmpc-dev
-RUN apt autoremove 
-RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl nodejs libgmp-dev libmpfr-dev libmpc-dev \
+    # if you located in China, you can use aliyun mirror to speed up
+    && echo "deb http://mirrors.aliyun.com/debian testing main" > /etc/apt/sources.list \
+    #&& echo "deb http://deb.debian.org/debian testing main" > /etc/apt/sources.list \
 
 # Copy Python environment and packages
 ENV VIRTUAL_ENV=/app/api/.venv
 COPY --from=packages ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+# Download nltk data
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
 
 # Copy source code
 COPY . /app/api/
