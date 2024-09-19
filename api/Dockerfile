@@ -7,9 +7,9 @@ WORKDIR /app/api
 ENV POETRY_VERSION=1.8.3
 
 # if you located in China, you can use aliyun mirror to speed up
-# RUN pip install --no-cache-dir poetry==${POETRY_VERSION} -i https://mirrors.aliyun.com/pypi/simple/
+RUN pip install --no-cache-dir poetry==${POETRY_VERSION} -i https://mirrors.aliyun.com/pypi/simple/
 
-RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
+#RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 
 # Configure Poetry
 ENV POETRY_CACHE_DIR=/tmp/poetry_cache
@@ -26,10 +26,10 @@ RUN sed -i 's@deb.debian.org@mirrors.aliyun.com@g' /etc/apt/sources.list.d/debia
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc g++ libc-dev libffi-dev libgmp-dev libmpfr-dev libmpc-dev
 
+
 # Install Python dependencies
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --sync --no-cache --no-root
-
+RUN set -x && poetry install --sync --no-cache --no-root -vvv 2>&1 | tee poetry_install.log
 
 # production stage
 FROM base AS production
@@ -53,7 +53,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl nodejs libgmp-dev libmpfr-dev libmpc-dev \
     # if you located in China, you can use aliyun mirror to speed up
     && echo "deb http://mirrors.aliyun.com/debian testing main" > /etc/apt/sources.list \
-    #&& echo "deb http://deb.debian.org/debian testing main" > /etc/apt/sources.list \
+    # && echo "deb http://deb.debian.org/debian testing main" > /etc/apt/sources.list \
+    && apt-get update \
+    # For Security
+    && apt-get install -y --no-install-recommends zlib1g=1:1.3.dfsg+really1.3.1-1 expat=2.6.3-1 libldap-2.5-0=2.5.18+dfsg-3 perl=5.38.2-5 libsqlite3-0=3.46.0-1 \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy Python environment and packages
 ENV VIRTUAL_ENV=/app/api/.venv
