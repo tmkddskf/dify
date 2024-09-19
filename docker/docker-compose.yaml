@@ -180,7 +180,7 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: langgenius/dify-api:0.6.12-fix1
+    image: docker.paas.3311csci.com/csci/dify-api:0.6.12-fix1
     restart: always
     environment:
       # Use the shared environment variables.
