@@ -106,6 +106,7 @@ export type MessageContent = {
   metadata: Metadata
   agent_thoughts: any[] // TODO
   workflow_run_id: string
+  parent_message_id: string | null
 }
 
 export type CompletionConversationGeneralDetail = {
@@ -296,6 +297,7 @@ export type WorkflowRunDetailResponse = {
   created_by_end_user?: EndUserInfo
   created_at: number
   finished_at: number
+  exceptions_count?: number
 }
 
 export type AgentLogMeta = {

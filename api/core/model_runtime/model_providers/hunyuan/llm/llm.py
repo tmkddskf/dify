@@ -1,19 +1,23 @@
 import json
 import logging
 from collections.abc import Generator
+from typing import cast
 
-from tencentcloud.common import credential
-from tencentcloud.common.exception import TencentCloudSDKException
-from tencentcloud.common.profile.client_profile import ClientProfile
-from tencentcloud.common.profile.http_profile import HttpProfile
-from tencentcloud.hunyuan.v20230901 import hunyuan_client, models
+from tencentcloud.common import credential  # type: ignore
+from tencentcloud.common.exception import TencentCloudSDKException  # type: ignore
+from tencentcloud.common.profile.client_profile import ClientProfile  # type: ignore
+from tencentcloud.common.profile.http_profile import HttpProfile  # type: ignore
+from tencentcloud.hunyuan.v20230901 import hunyuan_client, models  # type: ignore
 
 from core.model_runtime.entities.llm_entities import LLMResult, LLMResultChunk, LLMResultChunkDelta
 from core.model_runtime.entities.message_entities import (
     AssistantPromptMessage,
+    ImagePromptMessageContent,
     PromptMessage,
+    PromptMessageContentType,
     PromptMessageTool,
     SystemPromptMessage,
+    TextPromptMessageContent,
     ToolPromptMessage,
     UserPromptMessage,
 )
@@ -50,6 +54,7 @@ class HunyuanLargeLanguageModel(LargeLanguageModel):
             "Model": model,
             "Messages": messages_dict,
             "Stream": stream,
+            "Stop": stop,
             **custom_parameters,
         }
         # add Tools and ToolChoice
@@ -143,6 +148,25 @@ class HunyuanLargeLanguageModel(LargeLanguageModel):
                 tool_execute_result = {"result": message.content}
                 content = json.dumps(tool_execute_result, ensure_ascii=False)
                 dict_list.append({"Role": message.role.value, "Content": content, "ToolCallId": message.tool_call_id})
+            elif isinstance(message, UserPromptMessage):
+                message = cast(UserPromptMessage, message)
+                if isinstance(message.content, str):
+                    dict_list.append({"Role": message.role.value, "Content": message.content})
+                else:
+                    sub_messages = []
+                    for message_content in message.content:
+                        if message_content.type == PromptMessageContentType.TEXT:
+                            message_content = cast(TextPromptMessageContent, message_content)
+                            sub_message_dict = {"Type": "text", "Text": message_content.data}
+                            sub_messages.append(sub_message_dict)
+                        elif message_content.type == PromptMessageContentType.IMAGE:
+                            message_content = cast(ImagePromptMessageContent, message_content)
+                            sub_message_dict = {
+                                "Type": "image_url",
+                                "ImageUrl": {"Url": message_content.data},
+                            }
+                            sub_messages.append(sub_message_dict)
+                    dict_list.append({"Role": message.role.value, "Contents": sub_messages})
             else:
                 dict_list.append({"Role": message.role.value, "Content": message.content})
         return dict_list
@@ -282,7 +306,7 @@ class HunyuanLargeLanguageModel(LargeLanguageModel):
         elif isinstance(message, ToolPromptMessage):
             message_text = f"{tool_prompt} {content}"
         elif isinstance(message, SystemPromptMessage):
-            message_text = content
+            message_text = content if isinstance(content, str) else ""
         else:
             raise ValueError(f"Got unknown type {message}")
 

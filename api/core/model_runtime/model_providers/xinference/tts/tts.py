@@ -1,7 +1,7 @@
 import concurrent.futures
-from typing import Optional
+from typing import Any, Optional
 
-from xinference_client.client.restful.restful_client import RESTfulAudioModelHandle
+from xinference_client.client.restful.restful_client import RESTfulAudioModelHandle  # type: ignore
 
 from core.model_runtime.entities.common_entities import I18nObject
 from core.model_runtime.entities.model_entities import AIModelEntity, FetchFrom, ModelType
@@ -15,7 +15,7 @@ from core.model_runtime.errors.invoke import (
 )
 from core.model_runtime.errors.validate import CredentialsValidateFailedError
 from core.model_runtime.model_providers.__base.tts_model import TTSModel
-from core.model_runtime.model_providers.xinference.xinference_helper import XinferenceHelper
+from core.model_runtime.model_providers.xinference.xinference_helper import XinferenceHelper, validate_model_uid
 
 
 class XinferenceText2SpeechModel(TTSModel):
@@ -70,15 +70,18 @@ class XinferenceText2SpeechModel(TTSModel):
         :return:
         """
         try:
-            if "/" in credentials["model_uid"] or "?" in credentials["model_uid"] or "#" in credentials["model_uid"]:
+            if not validate_model_uid(credentials):
                 raise CredentialsValidateFailedError("model_uid should not contain /, ?, or #")
 
             credentials["server_url"] = credentials["server_url"].removesuffix("/")
+            api_key = credentials.get("api_key")
+            if api_key is None:
+                raise CredentialsValidateFailedError("api_key is required")
 
             extra_param = XinferenceHelper.get_xinference_extra_parameter(
                 server_url=credentials["server_url"],
                 model_uid=credentials["model_uid"],
-                api_key=credentials.get("api_key"),
+                api_key=api_key,
             )
 
             if "text-to-audio" not in extra_param.model_ability:
@@ -116,7 +119,7 @@ class XinferenceText2SpeechModel(TTSModel):
         """
         return self._tts_invoke_streaming(model, credentials, content_text, voice)
 
-    def get_customizable_model_schema(self, model: str, credentials: dict) -> AIModelEntity | None:
+    def get_customizable_model_schema(self, model: str, credentials: dict) -> Optional[AIModelEntity]:
         """
         used to define customizable model schema
         """
@@ -166,7 +169,7 @@ class XinferenceText2SpeechModel(TTSModel):
 
         return self.model_voices["__default"]["all"]
 
-    def _get_model_default_voice(self, model: str, credentials: dict) -> any:
+    def _get_model_default_voice(self, model: str, credentials: dict) -> Any:
         return ""
 
     def _get_model_word_limit(self, model: str, credentials: dict) -> int:
@@ -178,7 +181,7 @@ class XinferenceText2SpeechModel(TTSModel):
     def _get_model_workers_limit(self, model: str, credentials: dict) -> int:
         return 5
 
-    def _tts_invoke_streaming(self, model: str, credentials: dict, content_text: str, voice: str) -> any:
+    def _tts_invoke_streaming(self, model: str, credentials: dict, content_text: str, voice: str) -> Any:
         """
         _tts_invoke_streaming text2speech model
 
@@ -208,21 +211,21 @@ class XinferenceText2SpeechModel(TTSModel):
                 executor = concurrent.futures.ThreadPoolExecutor(max_workers=min(3, len(sentences)))
                 futures = [
                     executor.submit(
-                        handle.speech, input=sentences[i], voice=voice, response_format="mp3", speed=1.0, stream=False
+                        handle.speech, input=sentences[i], voice=voice, response_format="mp3", speed=1.0, stream=True
                     )
                     for i in range(len(sentences))
                 ]
 
                 for future in futures:
                     response = future.result()
-                    for i in range(0, len(response), 1024):
-                        yield response[i : i + 1024]
+                    for chunk in response:
+                        yield chunk
             else:
                 response = handle.speech(
-                    input=content_text.strip(), voice=voice, response_format="mp3", speed=1.0, stream=False
+                    input=content_text.strip(), voice=voice, response_format="mp3", speed=1.0, stream=True
                 )
 
-                for i in range(0, len(response), 1024):
-                    yield response[i : i + 1024]
+                for chunk in response:
+                    yield chunk
         except Exception as ex:
             raise InvokeBadRequestError(str(ex))

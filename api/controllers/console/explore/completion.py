@@ -1,12 +1,11 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from flask_login import current_user
-from flask_restful import reqparse
+from flask_login import current_user  # type: ignore
+from flask_restful import reqparse  # type: ignore
 from werkzeug.exceptions import InternalServerError, NotFound
 
 import services
-from controllers.console import api
 from controllers.console.app.error import (
     AppUnavailableError,
     CompletionRequestError,
@@ -19,7 +18,11 @@ from controllers.console.explore.error import NotChatAppError, NotCompletionAppE
 from controllers.console.explore.wraps import InstalledAppResource
 from core.app.apps.base_app_queue_manager import AppQueueManager
 from core.app.entities.app_invoke_entities import InvokeFrom
-from core.errors.error import ModelCurrentlyNotSupportError, ProviderTokenNotInitError, QuotaExceededError
+from core.errors.error import (
+    ModelCurrentlyNotSupportError,
+    ProviderTokenNotInitError,
+    QuotaExceededError,
+)
 from core.model_runtime.errors.invoke import InvokeError
 from extensions.ext_database import db
 from libs import helper
@@ -46,7 +49,7 @@ class CompletionApi(InstalledAppResource):
         streaming = args["response_mode"] == "streaming"
         args["auto_generate_name"] = False
 
-        installed_app.last_used_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        installed_app.last_used_at = datetime.now(UTC).replace(tzinfo=None)
         db.session.commit()
 
         try:
@@ -100,12 +103,13 @@ class ChatApi(InstalledAppResource):
         parser.add_argument("query", type=str, required=True, location="json")
         parser.add_argument("files", type=list, required=False, location="json")
         parser.add_argument("conversation_id", type=uuid_value, location="json")
+        parser.add_argument("parent_message_id", type=uuid_value, required=False, location="json")
         parser.add_argument("retriever_from", type=str, required=False, default="explore_app", location="json")
         args = parser.parse_args()
 
         args["auto_generate_name"] = False
 
-        installed_app.last_used_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        installed_app.last_used_at = datetime.now(UTC).replace(tzinfo=None)
         db.session.commit()
 
         try:
@@ -146,21 +150,3 @@ class ChatStopApi(InstalledAppResource):
         AppQueueManager.set_stop_flag(task_id, InvokeFrom.EXPLORE, current_user.id)
 
         return {"result": "success"}, 200
-
-
-api.add_resource(
-    CompletionApi, "/installed-apps/<uuid:installed_app_id>/completion-messages", endpoint="installed_app_completion"
-)
-api.add_resource(
-    CompletionStopApi,
-    "/installed-apps/<uuid:installed_app_id>/completion-messages/<string:task_id>/stop",
-    endpoint="installed_app_stop_completion",
-)
-api.add_resource(
-    ChatApi, "/installed-apps/<uuid:installed_app_id>/chat-messages", endpoint="installed_app_chat_completion"
-)
-api.add_resource(
-    ChatStopApi,
-    "/installed-apps/<uuid:installed_app_id>/chat-messages/<string:task_id>/stop",
-    endpoint="installed_app_stop_chat_completion",
-)

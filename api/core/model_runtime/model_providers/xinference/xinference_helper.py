@@ -1,6 +1,6 @@
 from threading import Lock
 from time import time
-from typing import Optional
+from typing import Any, Optional
 
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, MissingSchema, Timeout
@@ -39,13 +39,15 @@ class XinferenceModelExtraParameter:
         self.model_family = model_family
 
 
-cache = {}
+cache: dict[str, dict[str, Any]] = {}
 cache_lock = Lock()
 
 
 class XinferenceHelper:
     @staticmethod
-    def get_xinference_extra_parameter(server_url: str, model_uid: str, api_key: str) -> XinferenceModelExtraParameter:
+    def get_xinference_extra_parameter(
+        server_url: str, model_uid: str, api_key: str | None
+    ) -> XinferenceModelExtraParameter:
         XinferenceHelper._clean_cache()
         with cache_lock:
             if model_uid not in cache:
@@ -66,7 +68,9 @@ class XinferenceHelper:
             pass
 
     @staticmethod
-    def _get_xinference_extra_parameter(server_url: str, model_uid: str, api_key: str) -> XinferenceModelExtraParameter:
+    def _get_xinference_extra_parameter(
+        server_url: str, model_uid: str, api_key: str | None
+    ) -> XinferenceModelExtraParameter:
         """
         get xinference model extra parameter like model_format and model_handle_type
         """
@@ -132,3 +136,16 @@ class XinferenceHelper:
             context_length=context_length,
             model_family=model_family,
         )
+
+
+def validate_model_uid(credentials: dict) -> bool:
+    """
+    Validate the model_uid within the credentials dictionary to ensure it does not
+    contain forbidden characters ("/", "?", "#").
+
+    param credentials: model credentials
+    :return: True if the model_uid does not contain forbidden characters ("/", "?", "#"), else False.
+    """
+    forbidden_characters = ["/", "?", "#"]
+    model_uid = credentials.get("model_uid", "")
+    return not any(char in forbidden_characters for char in model_uid)

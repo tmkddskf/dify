@@ -1,29 +1,30 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
-class HuaweiCloudOBSStorageConfig(BaseModel):
+class HuaweiCloudOBSStorageConfig(BaseSettings):
     """
-    Huawei Cloud OBS storage configs
+    Configuration settings for Huawei Cloud Object Storage Service (OBS)
     """
 
     HUAWEI_OBS_BUCKET_NAME: Optional[str] = Field(
-        description="Huawei Cloud OBS bucket name",
+        description="Name of the Huawei Cloud OBS bucket to store and retrieve objects (e.g., 'my-obs-bucket')",
         default=None,
     )
 
     HUAWEI_OBS_ACCESS_KEY: Optional[str] = Field(
-        description="Huawei Cloud OBS Access key",
+        description="Access Key ID for authenticating with Huawei Cloud OBS",
         default=None,
     )
 
     HUAWEI_OBS_SECRET_KEY: Optional[str] = Field(
-        description="Huawei Cloud OBS Secret key",
+        description="Secret Access Key for authenticating with Huawei Cloud OBS",
         default=None,
     )
 
     HUAWEI_OBS_SERVER: Optional[str] = Field(
-        description="Huawei Cloud OBS server URL",
+        description="Endpoint URL for Huawei Cloud OBS (e.g., 'https://obs.cn-north-4.myhuaweicloud.com')",
         default=None,
     )

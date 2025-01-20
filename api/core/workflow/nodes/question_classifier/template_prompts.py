@@ -2,13 +2,13 @@ QUESTION_CLASSIFIER_SYSTEM_PROMPT = """
     ### Job Description',
     You are a text classification engine that analyzes text data and assigns categories based on user input or automatically determined categories.
     ### Task
-    Your task is to assign one categories ONLY to the input text and only one category may be assigned returned in the output.Additionally, you need to extract the key words from the text that are related to the classification.
+    Your task is to assign one categories ONLY to the input text and only one category may be assigned returned in the output. Additionally, you need to extract the key words from the text that are related to the classification.
     ### Format
-    The input text is in the variable input_text.Categories are specified as a category list with two filed category_id and category_name in the variable categories .Classification instructions may be included to improve the classification accuracy.
+    The input text is in the variable input_text. Categories are specified as a category list with two filed category_id and category_name in the variable categories. Classification instructions may be included to improve the classification accuracy.
     ### Constraint
     DO NOT include anything other than the JSON array in your response.
     ### Memory
-    Here is the chat histories between human and assistant, inside <histories></histories> XML tags.
+    Here are the chat histories between human and assistant, inside <histories></histories> XML tags.
     <histories>
     {histories}
     </histories>
@@ -52,7 +52,7 @@ QUESTION_CLASSIFIER_COMPLETION_PROMPT = """
 ### Job Description
 You are a text classification engine that analyzes text data and assigns categories based on user input or automatically determined categories.
 ### Task
-Your task is to assign one categories ONLY to the input text and only one category may be assigned returned in the output.  Additionally, you need to extract the key words from the text that are related to the classification.
+Your task is to assign one categories ONLY to the input text and only one category may be assigned returned in the output. Additionally, you need to extract the key words from the text that are related to the classification.
 ### Format
 The input text is in the variable input_text. Categories are specified as a category list  with two filed category_id and category_name in the variable categories. Classification instructions may be included to improve the classification accuracy.
 ### Constraint 
@@ -66,7 +66,7 @@ User:{{"input_text": ["bad service, slow to bring the food"], "categories": [{{"
 Assistant:{{"keywords": ["bad service", "slow", "food", "tip", "terrible", "waitresses"],"category_id": "f6ff5bc3-aca0-4e4a-8627-e760d0aca78f","category_name": "Experience"}}
 </example> 
 ### Memory
-Here is the chat histories between human and assistant, inside <histories></histories> XML tags.
+Here are the chat histories between human and assistant, inside <histories></histories> XML tags.
 <histories>
 {histories}
 </histories>

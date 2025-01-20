@@ -1,12 +1,12 @@
 import base64
 import time
-from collections.abc import Mapping
 from typing import Union
 
 import numpy as np
 from openai import OpenAI
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer  # type: ignore
 
+from core.entities.embedding_type import EmbeddingInputType
 from core.model_runtime.entities.model_entities import PriceType
 from core.model_runtime.entities.text_embedding_entities import EmbeddingUsage, TextEmbeddingResult
 from core.model_runtime.errors.validate import CredentialsValidateFailedError
@@ -22,7 +22,14 @@ class UpstageTextEmbeddingModel(_CommonUpstage, TextEmbeddingModel):
     def _get_tokenizer(self) -> Tokenizer:
         return Tokenizer.from_pretrained("upstage/solar-1-mini-tokenizer")
 
-    def _invoke(self, model: str, credentials: dict, texts: list[str], user: str | None = None) -> TextEmbeddingResult:
+    def _invoke(
+        self,
+        model: str,
+        credentials: dict,
+        texts: list[str],
+        user: str | None = None,
+        input_type: EmbeddingInputType = EmbeddingInputType.DOCUMENT,
+    ) -> TextEmbeddingResult:
         """
         Invoke text embedding model
 
@@ -30,6 +37,7 @@ class UpstageTextEmbeddingModel(_CommonUpstage, TextEmbeddingModel):
         :param credentials: model credentials
         :param texts: texts to embed
         :param user: unique user id
+        :param input_type: input type
         :return: embeddings result
         """
 
@@ -91,7 +99,10 @@ class UpstageTextEmbeddingModel(_CommonUpstage, TextEmbeddingModel):
                 average = embeddings_batch[0]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+            embedding = (average / np.linalg.norm(average)).tolist()
+            if np.isnan(embedding).any():
+                raise ValueError("Normalized embedding is nan please try again")
+            embeddings[i] = embedding
 
         usage = self._calc_response_usage(model=model, credentials=credentials, tokens=used_tokens)
 
@@ -120,7 +131,7 @@ class UpstageTextEmbeddingModel(_CommonUpstage, TextEmbeddingModel):
 
         return total_num_tokens
 
-    def validate_credentials(self, model: str, credentials: Mapping) -> None:
+    def validate_credentials(self, model: str, credentials: dict) -> None:
         """
         Validate model credentials
 

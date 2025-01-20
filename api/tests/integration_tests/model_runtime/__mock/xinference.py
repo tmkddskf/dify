@@ -5,33 +5,29 @@ from typing import Union
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from requests import Response
-from requests.exceptions import ConnectionError
 from requests.sessions import Session
-from xinference_client.client.restful.restful_client import (
+from xinference_client.client.restful.restful_client import (  # type: ignore
     Client,
-    RESTfulChatglmCppChatModelHandle,
     RESTfulChatModelHandle,
     RESTfulEmbeddingModelHandle,
     RESTfulGenerateModelHandle,
     RESTfulRerankModelHandle,
 )
-from xinference_client.types import Embedding, EmbeddingData, EmbeddingUsage
+from xinference_client.types import Embedding, EmbeddingData, EmbeddingUsage  # type: ignore
 
 
 class MockXinferenceClass:
-    def get_chat_model(
-        self: Client, model_uid: str
-    ) -> Union[RESTfulChatglmCppChatModelHandle, RESTfulGenerateModelHandle, RESTfulChatModelHandle]:
+    def get_chat_model(self: Client, model_uid: str) -> Union[RESTfulGenerateModelHandle, RESTfulChatModelHandle]:
         if not re.match(r"https?:\/\/[^\s\/$.?#].[^\s]*$", self.base_url):
             raise RuntimeError("404 Not Found")
 
-        if "generate" == model_uid:
+        if model_uid == "generate":
             return RESTfulGenerateModelHandle(model_uid, base_url=self.base_url, auth_headers={})
-        if "chat" == model_uid:
+        if model_uid == "chat":
             return RESTfulChatModelHandle(model_uid, base_url=self.base_url, auth_headers={})
-        if "embedding" == model_uid:
+        if model_uid == "embedding":
             return RESTfulEmbeddingModelHandle(model_uid, base_url=self.base_url, auth_headers={})
-        if "rerank" == model_uid:
+        if model_uid == "rerank":
             return RESTfulRerankModelHandle(model_uid, base_url=self.base_url, auth_headers={})
         raise RuntimeError("404 Not Found")
 
