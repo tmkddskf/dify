@@ -342,6 +342,8 @@ class PublishedWorkflowApi(Resource):
         workflow_service = WorkflowService()
         workflow = workflow_service.publish_workflow(app_model=app_model, account=current_user)
 
+        logger.info(f"Published workflow: {workflow.id}, operate by: {current_user.id}({current_user.email})")
+
         return {"result": "success", "created_at": TimestampField().format(workflow.created_at)}
 
 

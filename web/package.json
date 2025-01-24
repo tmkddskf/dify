@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && cross-env PORT=$npm_config_port HOSTNAME=$npm_config_host node .next/standalone/server.js",
+    "start": "xcopy .next\\static .next\\standalone\\.next\\static /E /I && xcopy public .next\\standalone\\public /E /I && cross-env PORT=$npm_config_port HOSTNAME=$npm_config_host node .next/standalone/server.js",
     "lint": "next lint",
     "fix": "next lint --fix",
     "eslint-fix": "eslint --fix",
@@ -36,6 +36,7 @@
     "@mdx-js/react": "^2.3.0",
     "@monaco-editor/react": "^4.6.0",
     "@next/mdx": "^14.0.4",
+    "@next/swc-win32-x64-msvc": "^15.1.6",
     "@remixicon/react": "^4.5.0",
     "@sentry/react": "^7.54.0",
     "@sentry/utils": "^7.54.0",

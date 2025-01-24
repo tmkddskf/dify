@@ -410,6 +410,8 @@ services:
     volumes:
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
+      # Mount the log directory to the container, for storing log files.
+      - ./volumes/app/api/logs:/app/api/logs
     networks:
       - ssrf_proxy_network
       - default
